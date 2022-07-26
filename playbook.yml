@@ -1,0 +1,86 @@
+---
+- hosts: all
+
+  tasks:
+    - name: Install EPEL release for nginx
+      yum: use_backend=auto name=epel-release state=present
+    - name: Install nginx
+      yum: name=nginx state=present
+
+    - name: Create webapp nginx config file
+      copy:
+          dest: /etc/nginx/conf.d/webapp.conf
+          mode: 0755
+          content: |
+            server {
+              listen 80;
+              server_name localhost;
+
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-For $remote_addr;
+
+              location = /favicon.ico {
+                return 204;
+                access_log     off;
+                log_not_found  off;
+              }
+
+              location /app {
+                  proxy_pass http://localhost:8088/;
+              }
+
+              location /health {
+                  proxy_pass http://localhost:8088/healthweb;
+              }                
+
+              location /grafana {
+                  proxy_pass http://localhost:8088/grafanaweb;
+              }
+
+              location /grafana/dashboard {
+                  proxy_pass http://localhost:8088/grafanadashboard;
+              }              
+
+
+
+            }
+
+    - name: Start nginx
+      service: name=nginx state=started
+
+    - name: Install netstat
+      yum: name=net-tools state=present
+
+    - name: Install Grafana
+      yum: name=grafana state=present update_cache=yes 
+
+
+    - name: installing flask
+      pip: name=flask state=latest
+
+    - name: installing prometheus_flask_exporter
+      pip: name=prometheus_flask_exporter state=latest
+
+    - name: run flask app
+      shell: |
+        nohup python3 /vagrant/webapp.py > log.txt 2>&1 &
+            
+    #- name: Install Prometheus
+    #  yum: name=cloudalchemy.prometheus state=present      
+
+  handlers:
+    - name: Start grafana
+      systemd:
+        name: grafana-server
+        state: started
+    
+    - name: Enable grafana
+      systemd:
+        name: grafana-server
+        enabled: yes
+    
+    - name: Start and Enable Nginx
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
