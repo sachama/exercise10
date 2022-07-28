@@ -4,21 +4,26 @@ from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask(__name__)
 counter = 1
-metrics = PrometheusMetrics(app)
+# group by endpoint rather than path
+metrics = PrometheusMetrics(app, group_by='endpoint')
+
+@app.route('/collection/:collection_id/item/:item_id')
+@metrics.counter(
+    'cnt_collection', 'Number of invocations per collection', labels={
+        'collection': lambda: request.view_args['collection_id'],
+        'status': lambda resp: resp.status_code
+    })
+def get_item_from_collection(collection_id, item_id):
+    pass
+
+metrics.start_http_server(8099)
 
 @app.route("/")
 def test():
     global counter
     counter += 1
     return (f"CONGRATULATIONS. You visit this page {counter}-times")
-    
-@app.route("/healthweb")
-def test2():
-    return ("Health Web - Prometheus metric")
 
-@app.route("/grafanaweb")
-def test3():
-    return ("Grafana Web")
 
 @app.route("/grafanadashboard")
 def test4():
