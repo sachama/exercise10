@@ -9,6 +9,8 @@ Vagrant.configure("2") do |config|
   config.vm.provision "ansible" do |ansible|
     ansible.become = true
     ansible.playbook = "playbook.yml"
+    ansible.verbose = "v"
+    ansible.vault_password_file = "vp"   
   end
 
   config.vm.network "forwarded_port", guest: 80, host: 8080
