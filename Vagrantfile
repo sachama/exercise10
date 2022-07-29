@@ -9,7 +9,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "ansible" do |ansible|
     ansible.become = true
     ansible.playbook = "playbook.yml"
-    #ansible.verbose = "vvv"
+    ansible.verbose = "v"
     ansible.vault_password_file = "vp"   
   end
 
