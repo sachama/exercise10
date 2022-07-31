@@ -9,17 +9,22 @@
 - ansible playbook: playbook.yml
   - install and configure nginx
     - listen 80
-    - location /app:  proxy_pass http://localhost:8088/;
-    - location /health
-    - location /grafana
-    - location /grafana/dashboard
-  - install and configure python3 simple web: webapp.py
-    - flask: app.run(host="0.0.0.0", port=8088)
+    - location /app:  proxy_pass http://localhost:6000/app;
+    - location /health proxy_pass http://localhost:5000/metrics;
+    - location / proxy_pass http://localhost:3000/; # grafana
+- install and configure python3 simple web: webapp.py
+- grafana
+  - default Grafana web interface with user authentication: # initial admin yet :( 
+  - source: # source is needed add manually yet :(
+      prometheus:
+        HTTP:
+          URL: http://localhost:7090
+          Acess: Browser
 
 ### TODO
-- custom application metrics for Prometheus scraper
-- default Grafana web interface with user authentication
+- location /grafana/dashboard
 - read-only Grafana dashboard
 - store application passwords in Ansible vault (the master password can be stored in clear text form in the repo)
 - harden a system's security with firewall and SELinux
 - ensure all services are up and running even after Vagrant box reboot
+

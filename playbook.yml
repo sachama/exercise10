@@ -1,11 +1,56 @@
 ---
 - hosts: all
+  become: True
+  gather_facts: False
+
+  pre_tasks:
+    - name: fix for python interpreter for managed host
+      include: tasks/fix-python.yml
 
   tasks:
-    - name: Install EPEL release for nginx
-      yum: use_backend=auto name=epel-release state=present
+    - include: 'tasks/main.yml'
+  handlers:
+    - include: 'handlers/main.yml'
+  vars_files:
+    - 'defaults/main.yml'
 
-    # nginx  
+  vars:
+
+    prometheus_components: [ "prometheus" ]
+    #prometheus_components: [ "node_exporter" ]
+    #prometheus_components: [ "alertmanager" ]
+    # prometheus_components: [ "prometheus", "node_exporter", "alertmanager" ]
+    #prometheus_version: git
+    #prometheus_node_exporter_version: git
+    #prometheus_alertmanager_version: git
+
+
+    #prometheus_rule_files:
+    #  this_is_rule_1_InstanceDown:
+    #    src:  test/basic.rules
+    #    dest: basic.rules
+
+
+    prometheus_alertmanager_hostport: "localhost:9093"
+
+    #prometheus_alertmanager_conf: test/alertmanager.yml.j2
+
+  post_tasks:
+    - name: copy file_sd
+      copy: src="{{ playbook_dir }}/test/file_sd.yml"  dest={{ prometheus_file_sd_config_path }}
+    - name: Install netstat
+      yum: name=net-tools state=present
+    - name: installing flask
+      pip: name=flask state=latest  
+    - name: installing flask_cors
+      pip: name=flask_cors state=latest
+    - name: installing prometheus_flask_exporter
+      pip: name=prometheus_flask_exporter state=latest
+    - name: installing flask_prometheus_metrics
+      pip: name=flask_prometheus_metrics state=latest
+    - name: run flask app
+      shell: |
+        nohup python3 /vagrant/webapp.py > log.txt 2>&1 &
     - name: Install nginx
       yum: name=nginx state=present
     - name: Create webapp nginx config file
@@ -15,81 +60,41 @@
           content: |
             server {
               listen 80;
-              server_tokens off;
-              client_max_body_size 10M;
+              listen [::]:80;
               server_name localhost;
-
-
-              ignore_invalid_headers off;
-
-              location /app {
+            
+              location /app/ {
                   proxy_set_header Host $host;
                   proxy_set_header X-Forwarded-For $remote_addr;
-                  proxy_pass http://localhost:8088/;
+                  proxy_pass http://localhost:6000/app;
               }
-
-              location /health {
+            
+              location /health/ {
                   proxy_set_header Host $host;
                   proxy_set_header X-Forwarded-For $remote_addr;
-                  proxy_pass http://localhost:8088/metrics;
+                  proxy_pass http://localhost:5000/metrics;
               }
-
-              location /grafana {
-                  send_timeout            600;
-                  proxy_read_timeout      600;
-                  proxy_send_timeout      600;
-                  proxy_connect_timeout   600;
-                  proxy_redirect          off;
-                  proxy_set_header        Host $host;
-                  proxy_set_header        X-Real-IP $remote_addr;
-                  proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header        X-Forwarded-Host $server_name;
-                  proxy_set_header        X-Forwarded-Proto $scheme;      
-                  proxy_pass http://localhost:3000/login;
+            
+              location / {
+                  proxy_pass http://localhost:3000/;
               }
-             
-              location /grafana/dashboard {
-                  proxy_pass http://localhost:8088/grafanadashboard;
-              }              
-            }
-    - name: Start nginx
-      service: name=nginx state=started
+            
+            }    
+    - name: restart nginx
+      service: name=nginx state=restarted            
 
-    - name: Install netstat
-      yum: name=net-tools state=present
+
 
     # grafana
     - name: Install Grafana
-      yum: name=grafana state=present update_cache=yes 
+      yum: name=grafana state=present update_cache=yes
       notify:
         - Start grafana
         - Enable grafana
 
-
-    - name: installing flask
-      pip: name=flask state=latest
-
-    - name: installing prometheus_flask_exporter
-      pip: name=prometheus_flask_exporter state=latest
-
-    - name: run flask app
-      shell: |
-        nohup python3 /vagrant/webapp.py > log.txt 2>&1 &
-                
-
-  handlers:
-    - name: Start grafana
-      systemd:
-        name: grafana-server
-        state: started
-    
-    - name: Enable grafana
-      systemd:
-        name: grafana-server
-        enabled: yes
-    
-    - name: Start and Enable Nginx
-      systemd:
-        name: nginx
-        state: started
-        enabled: yes
+    # prometheus
+    - name: Start prometheus
+      yum: name=grafana state=present update_cache=yes
+      notify:
+        - Start prometheus
+        - Enable prometheus
