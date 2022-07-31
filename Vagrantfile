@@ -3,9 +3,9 @@ Vagrant.configure(2) do |config|
     # main & default: normal OS series...
     config.vm.define "main", primary: true do |node|
         node.vm.box = "alvistack/centos-8-stream"
-
-
+        
         node.vm.provision "ansible" do |ansible|
+            ansible.vault_password_file = "vp"
             ansible.playbook = "playbook.yml"
             #ansible.sudo = true
             ###ansible.verbose = "vvv"

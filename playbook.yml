@@ -6,7 +6,8 @@
   pre_tasks:
     - name: fix for python interpreter for managed host
       include: tasks/fix-python.yml
-
+    - name: installing flask_prometheus_metrics
+      pip: name=flask_prometheus_metrics state=latest
   tasks:
     - include: 'tasks/main.yml'
   handlers:
@@ -38,12 +39,12 @@
   post_tasks:
     - name: copy file_sd
       copy: src="{{ playbook_dir }}/test/file_sd.yml"  dest={{ prometheus_file_sd_config_path }}
-    - name: Install netstat
-      yum: name=net-tools state=present
+    #- name: Install netstat
+    #  yum: name=net-tools state=present
     - name: installing flask
       pip: name=flask state=latest  
-    - name: installing flask_cors
-      pip: name=flask_cors state=latest
+    #- name: installing flask_cors
+    #  pip: name=flask_cors state=latest
     - name: installing prometheus_flask_exporter
       pip: name=prometheus_flask_exporter state=latest
     - name: installing flask_prometheus_metrics
@@ -72,7 +73,7 @@
               location /health/ {
                   proxy_set_header Host $host;
                   proxy_set_header X-Forwarded-For $remote_addr;
-                  proxy_pass http://localhost:5000/metrics;
+                  proxy_pass http://localhost:6000/metrics;
               }
             
               location / {
@@ -83,18 +84,57 @@
     - name: restart nginx
       service: name=nginx state=restarted            
 
-
+    
+    # prometheus
+    #- name: Start prometheus
+    #  yum: name=grafana state=present update_cache=yes
+    #  notify:
+    #    - Start prometheus
+    #    - Enable prometheus
 
     # grafana
-    - name: Install Grafana
+    - name: Install Grafana 
       yum: name=grafana state=present update_cache=yes
       notify:
-        - Start grafana
         - Enable grafana
 
-    # prometheus
-    - name: Start prometheus
-      yum: name=grafana state=present update_cache=yes
-      notify:
-        - Start prometheus
-        - Enable prometheus
+    - name: replace line
+      lineinfile: 
+        path: /etc/grafana/grafana.ini 
+        regexp: '^admin_password(.*)$' 
+        line: "admin_password = {{ grafana_admin }}"
+        backrefs: yes
+    
+    - name: Start service grafana if not started
+      ansible.builtin.service:
+        name: grafana-server
+        state: started     
+
+    - name: create prometheus datasource
+      community.grafana.grafana_datasource:
+        name: webapp_prometheus
+        url: http://localhost:3000
+        grafana_user: "admin"
+        grafana_password: "{{ grafana_admin }}"
+        org_id: "1"        
+        ds_type: prometheus
+        ds_url: http://localhost:7090
+        access: direct        
+
+    - name: Create a Grafana organization
+      community.grafana.grafana_organization:
+        url: http://localhost:3000
+        grafana_user: "admin"
+        grafana_password: "{{ grafana_admin }}"        
+        name: orgtest
+        state: present
+        validate_certs: no 
+
+    - name: Import Grafana dashboard foo
+      community.grafana.grafana_dashboard:
+        url: http://localhost:3000
+        grafana_user: "admin"
+        grafana_password: "{{ grafana_admin }}"
+        org_id: 2
+        overwrite: yes
+        path: /vagrant/webapp_dashboard.json
