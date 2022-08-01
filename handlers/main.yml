@@ -56,4 +56,12 @@
 - name: Enable prometheus
   systemd:
     name: prometheus
-    enabled: yes    
+    enabled: yes
+
+- name: Enable nginx
+  systemd:
+    name: nginx
+    enabled: yes
+
+- name: reload systemctl
+  command: systemctl daemon-reload
