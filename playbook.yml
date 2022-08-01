@@ -49,11 +49,20 @@
       pip: name=prometheus_flask_exporter state=latest
     - name: installing flask_prometheus_metrics
       pip: name=flask_prometheus_metrics state=latest
-    - name: run flask app
-      shell: |
-        nohup python3 /vagrant/webapp.py > log.txt 2>&1 &
+    #- name: run flask app
+    #  shell: |
+    #    nohup python3 /vagrant/webapp.py > log.txt 2>&1 &
+    - name: webapp | Create Unit file
+      template: src=webapp.service.j2 dest=/lib/systemd/system/webapp.service mode=644
+      notify:
+        - reload systemctl
+    - name: webapp | Start webapp
+      service: name=webapp.service state=started enabled=yes
+
+
     - name: Install nginx
       yum: name=nginx state=present
+
     - name: Create webapp nginx config file
       copy:
           dest: /etc/nginx/conf.d/webapp.conf
@@ -83,7 +92,8 @@
             }    
     - name: restart nginx
       service: name=nginx state=restarted            
-
+      notify:
+        - Enable nginx
     
     # prometheus
     #- name: Start prometheus
@@ -110,7 +120,7 @@
         name: grafana-server
         state: started     
 
-    - name: create prometheus datasource
+    - name: create prometheus datasource for org 1 - main
       community.grafana.grafana_datasource:
         name: webapp_prometheus
         url: http://localhost:3000
@@ -121,6 +131,16 @@
         ds_url: http://localhost:7090
         access: direct        
 
+    - name: Import Grafana dashboard to org 1 - main
+      community.grafana.grafana_dashboard:
+        url: http://localhost:3000
+        grafana_user: "admin"
+        grafana_password: "{{ grafana_admin }}"
+        org_id: 1
+        overwrite: yes
+        path: /vagrant/webapp_dashboard.json
+
+    # create grafana org 2, create datasource, create dashboard
     - name: Create a Grafana organization
       community.grafana.grafana_organization:
         url: http://localhost:3000
@@ -130,11 +150,22 @@
         state: present
         validate_certs: no 
 
-    - name: Import Grafana dashboard foo
+    - name: create prometheus datasource for org 2
+      community.grafana.grafana_datasource:
+        name: webapp_prometheus_2
+        url: http://localhost:3000
+        grafana_user: "admin"
+        grafana_password: "{{ grafana_admin }}"
+        org_id: "2"
+        ds_type: prometheus
+        ds_url: http://localhost:7090
+        access: direct
+
+    - name: Import Grafana dashboard to org 2
       community.grafana.grafana_dashboard:
         url: http://localhost:3000
         grafana_user: "admin"
         grafana_password: "{{ grafana_admin }}"
         org_id: 2
         overwrite: yes
-        path: /vagrant/webapp_dashboard.json
+        path: /vagrant/webapp_dashboard_2.json

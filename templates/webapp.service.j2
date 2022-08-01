@@ -1,0 +1,15 @@
+[Unit]
+Description=Webapp
+
+[Service]
+Type=simple
+
+User=root
+Groupr=root
+
+Restart=always
+StartLimitBurst=0
+ExecStart=python3 /vagrant/webapp.py > /home/vagrant/log.txt 2>&1
+
+[Install]
+WantedBy=multi-user.target

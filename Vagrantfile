@@ -1,5 +1,5 @@
 Vagrant.configure(2) do |config|
-
+    config.vm.box_check_update = false
     # main & default: normal OS series...
     config.vm.define "main", primary: true do |node|
         node.vm.box = "alvistack/centos-8-stream"
