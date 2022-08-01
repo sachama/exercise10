@@ -11,7 +11,7 @@
   - install and configure nginx
     - listen 80
     - location /app:  proxy_pass http://localhost:6000/app;
-    - location /health proxy_pass http://localhost:5000/metrics;
+    - location /health proxy_pass http://localhost:6000/metrics;
     - location / proxy_pass http://localhost:3000/; # grafana
 - install and configure python3 simple web: webapp.py
 - grafana
@@ -22,10 +22,14 @@
         - URL: http://localhost:7090
         - Acess: Browser
 
-### TODO
-- location /grafana/dashboard
-- read-only Grafana dashboard
 - store application passwords in Ansible vault (the master password can be stored in clear text form in the repo)
-- harden a system's security with firewall and SELinux
 - ensure all services are up and running even after Vagrant box reboot
+
+### TODO
+-	metrics Current application's CPU utilization 
+-	metrics Current application's RAM utilization 
+- "/grafana/dashboard" – exposes read-only Grafana dashboard displaying your web app's custom metrics over time, no user authentication should be required to access it 
+- harden a system's security with firewall and SELinux
+
+
 
