@@ -14,15 +14,18 @@
     - location /health proxy_pass http://localhost:6000/metrics;
     - location / proxy_pass http://localhost:3000/; # grafana
 - install and configure python3 simple web: webapp.py
+  - webapp.service
 - grafana
   - default Grafana web interface with user authentication: 
-  - source: source and dashboard are created by ansible
+  - note: source and dashboard are created by ansible
+  - source: 
     - prometheus:
       - HTTP:
         - URL: http://localhost:7090
         - Acess: Browser
+  - dashboard file: webapp_dashboard.json
 
-- store application passwords in Ansible vault (the master password can be stored in clear text form in the repo)
+- store application passwords in Ansible vault (the master password is stored in file vp)
 - ensure all services are up and running even after Vagrant box reboot
 
 ### TODO
@@ -33,9 +36,9 @@
 - harden a system's security with firewall and SELinux
 
 ### LINKS FROM HOST BROWSER
-- web application: webahttp://localhost:8080/app/
+- web application: http://localhost:8080/app/
 - prometheus app metrics: http://localhost:8080/health/
 - grafana web org 1 Main: http://localhost:8080/?orgid=1
-- grafana web org 2: http://localhost:8080/?orgid=2 #planned like readonly
+- grafana web org 2: http://localhost:8080/?orgid=2 #planned like readonly for /grafana/dashboard
 - prometheus web - targets: http://localhost:7090/targets
 
