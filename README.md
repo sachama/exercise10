@@ -27,9 +27,15 @@
 
 ### TODO
 -	metrics Current application's CPU utilization 
--	metrics Current application's RAM utilization 
+-	metrics Current application's RAM utilization
+- "/grafana" instead is used simple "/" meanwhile 
 - "/grafana/dashboard" – exposes read-only Grafana dashboard displaying your web app's custom metrics over time, no user authentication should be required to access it 
 - harden a system's security with firewall and SELinux
 
-
+### LINKS FROM HOST BROWSER
+- web application: webahttp://localhost:8080/app/
+- prometheus app metrics: http://localhost:8080/health/
+- grafana web org 1 Main: http://localhost:8080/?orgid=1
+- grafana web org 2: http://localhost:8080/?orgid=2 #planned like readonly
+- prometheus web - targets: http://localhost:7090/targets
 
