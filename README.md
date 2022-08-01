@@ -15,8 +15,8 @@
     - location / proxy_pass http://localhost:3000/; # grafana
 - install and configure python3 simple web: webapp.py
 - grafana
-  - default Grafana web interface with user authentication: # initial admin only yet :(
-  - source: # source is needed add manually onlu yet :(
+  - default Grafana web interface with user authentication: 
+  - source: source and dashboard are created by ansible
     - prometheus:
       - HTTP:
         - URL: http://localhost:7090
